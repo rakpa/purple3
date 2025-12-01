@@ -157,7 +157,6 @@ export function AddExpenseForm() {
         {/* Submit Button */}
         <Button
           type="submit"
-          variant="gradient"
           size="xl"
           className="w-full mt-6"
         >
