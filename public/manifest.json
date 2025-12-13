@@ -1,12 +1,14 @@
 {
-  "name": "Finance 2 - Expense Tracker",
-  "short_name": "Finance 2",
-  "description": "Track your expenses and income with a clean, modern expense management dashboard",
+  "name": "ExpenseTrack - Smart Expense Management",
+  "short_name": "ExpenseTrack",
+  "description": "Track your expenses and income with a clean, modern expense management dashboard. Monitor spending, manage budgets, and stay financially organized.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6b21a8",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",

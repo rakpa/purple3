@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { registerServiceWorker } from "./lib/serviceWorkerRegistration";
 
 const rootElement = document.getElementById("root");
 
@@ -11,6 +12,11 @@ if (!rootElement) {
 try {
   const root = createRoot(rootElement);
   root.render(<App />);
+  
+  // Register service worker for PWA
+  if (import.meta.env.PROD) {
+    registerServiceWorker();
+  }
 } catch (error) {
   console.error("Error rendering app:", error);
   rootElement.innerHTML = `
