@@ -24,6 +24,9 @@ export async function getCategories(type?: 'income' | 'expense') {
   const { data, error } = await query;
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 
@@ -39,6 +42,9 @@ export async function createCategory(data: CategoryInsert) {
     .single();
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 
@@ -56,6 +62,9 @@ export async function updateCategory(id: string, data: Partial<CategoryInsert>) 
     .single();
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 
@@ -71,6 +80,9 @@ export async function deleteCategory(id: string) {
     .eq('user_id', userId);
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 }

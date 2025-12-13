@@ -33,6 +33,9 @@ export async function getCurrencyEntries(filters?: {
     const { data, error } = await query;
 
     if (error) {
+      if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+        throw new Error('Supabase connection failed. Please check your environment variables.');
+      }
       throw new Error(error.message);
     }
 
@@ -52,6 +55,9 @@ export async function createCurrencyEntry(data: Omit<CurrencyEntryInsert, 'user_
     .single();
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 
@@ -69,6 +75,9 @@ export async function updateCurrencyEntry(id: string, data: CurrencyEntryUpdate)
     .single();
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 
@@ -84,6 +93,9 @@ export async function deleteCurrencyEntry(id: string) {
     .eq('user_id', userId);
 
   if (error) {
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+      throw new Error('Supabase connection failed. Please check your environment variables.');
+    }
     throw new Error(error.message);
   }
 }

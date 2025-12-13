@@ -3,13 +3,37 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ggpxsxanqpapwyqnfivv.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!supabaseAnonKey) {
-  console.warn('VITE_SUPABASE_ANON_KEY must be set in environment variables');
+// Validate environment variables
+if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
+  console.error('❌ VITE_SUPABASE_URL is not set or invalid');
+  console.error('Please set VITE_SUPABASE_URL in your environment variables');
 }
 
-// Create client with fallback URL to prevent errors
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
+if (!supabaseAnonKey || supabaseAnonKey === 'placeholder-key') {
+  console.error('❌ VITE_SUPABASE_ANON_KEY is not set or invalid');
+  console.error('Please set VITE_SUPABASE_ANON_KEY in your environment variables');
+  console.error('See ENV_SETUP.md for instructions');
+}
+
+// Create client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+// Test connection on initialization
+if (typeof window !== 'undefined') {
+  supabase.auth.getSession().catch((error) => {
+    console.error('Supabase connection error:', error);
+    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND')) {
+      console.error('⚠️ Supabase project not found. Please check:');
+      console.error('1. VITE_SUPABASE_URL is correct');
+      console.error('2. Supabase project is active');
+      console.error('3. CORS is enabled in Supabase settings');
+    }
+  });
+}
 

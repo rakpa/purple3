@@ -15,6 +15,14 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // If there's an OAuth callback hash, wait a bit longer for Supabase to process it
+        const hasOAuthHash = window.location.hash && window.location.hash.includes('access_token');
+        
+        if (hasOAuthHash) {
+          // Wait for Supabase to process the OAuth callback
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         setAuthenticated(!!session);
       } catch (error) {
@@ -32,6 +40,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthenticated(!!session);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

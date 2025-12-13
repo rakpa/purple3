@@ -10,18 +10,26 @@ async function getCurrentUserId() {
 }
 
 export async function createTransaction(data: TransactionInsert) {
-  const userId = await getCurrentUserId();
-  const { data: transaction, error } = await supabase
-    .from('transactions')
-    .insert([{ ...data, user_id: userId }])
-    .select()
-    .single();
+  try {
+    const userId = await getCurrentUserId();
+    const { data: transaction, error } = await supabase
+      .from('transactions')
+      .insert([{ ...data, user_id: userId }])
+      .select()
+      .single();
 
-  if (error) {
-    throw new Error(error.message);
+    if (error) {
+      if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+        throw new Error('Supabase connection failed. Please check your environment variables.');
+      }
+      throw new Error(error.message);
+    }
+
+    return transaction as Transaction;
+  } catch (error) {
+    console.error('Error creating transaction:', error);
+    throw error;
   }
-
-  return transaction as Transaction;
 }
 
 export async function getTransactions(filters?: {
@@ -53,6 +61,15 @@ export async function getTransactions(filters?: {
     const { data, error } = await query;
 
     if (error) {
+      // Handle 404 errors (Supabase project not found)
+      if (error.message?.includes('404') || error.message?.includes('NOT_FOUND') || error.code === 'NOT_FOUND') {
+        console.error('❌ Supabase 404 Error - Project not found');
+        console.error('Please check:');
+        console.error('1. VITE_SUPABASE_URL is correct in environment variables');
+        console.error('2. Supabase project is active and not paused');
+        console.error('3. See ENV_SETUP.md for setup instructions');
+        throw new Error('Supabase connection failed. Please check your environment variables and project status.');
+      }
       // If table doesn't exist or RLS issue, provide helpful error
       if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('permission')) {
         throw new Error('Database table not found. Please run the SQL in supabase-setup.sql in your Supabase dashboard.');
