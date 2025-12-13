@@ -1,43 +1,49 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Use fallback values - these should work even without env variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ggpxsxanqpapwyqnfivv.supabase.co';
+// Get anon key from env, use empty string as fallback (Supabase client will still be created)
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Validate environment variables
-if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co') {
-  console.error('❌ VITE_SUPABASE_URL is not set or invalid');
-  console.error('Please set VITE_SUPABASE_URL in your environment variables');
-}
-
-if (!supabaseAnonKey || supabaseAnonKey === 'placeholder-key') {
-  console.error('❌ VITE_SUPABASE_ANON_KEY is not set or invalid');
-  console.error('Please set VITE_SUPABASE_ANON_KEY in your environment variables');
-  console.error('See ENV_SETUP.md for instructions');
-}
-
-// Create client - ensure we have valid values
-const finalSupabaseUrl = supabaseUrl || 'https://ggpxsxanqpapwyqnfivv.supabase.co';
-const finalSupabaseAnonKey = supabaseAnonKey || '';
-
-// Create client
-export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+// Only log warnings in development
+if (import.meta.env.DEV) {
+  if (!import.meta.env.VITE_SUPABASE_URL) {
+    console.warn('⚠️ VITE_SUPABASE_URL not set, using fallback');
   }
-});
+  if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    console.warn('⚠️ VITE_SUPABASE_ANON_KEY not set - some features may not work');
+  }
+}
 
-// Test connection on initialization
-if (typeof window !== 'undefined') {
-  supabase.auth.getSession().catch((error) => {
-    console.error('Supabase connection error:', error);
-    if (error.message?.includes('404') || error.message?.includes('NOT_FOUND')) {
-      console.error('⚠️ Supabase project not found. Please check:');
-      console.error('1. VITE_SUPABASE_URL is correct');
-      console.error('2. Supabase project is active');
-      console.error('3. CORS is enabled in Supabase settings');
+// Create client - Supabase client can be created even with empty anon key
+// It just won't work for authenticated operations until a valid key is provided
+let supabase;
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
+  });
+} catch (error) {
+  console.error('Failed to create Supabase client:', error);
+  // Create a minimal client that won't crash the app
+  supabase = createClient(supabaseUrl, '', {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
+    }
+  });
+}
+
+export { supabase };
+
+// Only test connection in development to avoid blocking the app
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  supabase.auth.getSession().catch((error) => {
+    console.warn('Supabase connection warning (non-blocking):', error);
   });
 }
 

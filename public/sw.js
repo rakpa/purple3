@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'finance-2-v1';
+const CACHE_NAME = 'finance-2-v2';
 const STATIC_CACHE = [
   '/',
   '/manifest.json'
