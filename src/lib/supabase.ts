@@ -15,8 +15,12 @@ if (!supabaseAnonKey || supabaseAnonKey === 'placeholder-key') {
   console.error('See ENV_SETUP.md for instructions');
 }
 
+// Create client - ensure we have valid values
+const finalSupabaseUrl = supabaseUrl || 'https://ggpxsxanqpapwyqnfivv.supabase.co';
+const finalSupabaseAnonKey = supabaseAnonKey || '';
+
 // Create client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(finalSupabaseUrl, finalSupabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
