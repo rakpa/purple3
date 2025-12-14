@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import India from "./pages/India";
+import AISummary from "./pages/AISummary";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -60,6 +61,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <India />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ai-summary"
+              element={
+                <ProtectedRoute>
+                  <AISummary />
                 </ProtectedRoute>
               }
             />

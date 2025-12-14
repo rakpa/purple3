@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Sparkles, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Sparkles, Search, TrendingUp, TrendingDown, Loader2, Calendar, Filter, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "@/lib/transactions";
 import { getCategories } from "@/lib/categories";
@@ -8,8 +8,12 @@ import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { formatCurrency, cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface QueryResult {
   total: number;
@@ -24,6 +28,14 @@ export default function AISummary() {
   const [query, setQuery] = useState("");
   const [parsedQuery, setParsedQuery] = useState<QueryResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Quick filter states
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<"expense" | "income" | "all">("all");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [useQuickFilters, setUseQuickFilters] = useState(false);
 
   // Fetch all categories for better matching
   const { data: categories = [] } = useQuery({
@@ -172,10 +184,10 @@ export default function AISummary() {
       endDate = new Date(lastYear, 11, 31);
       periodLabel = "Last Year";
     } else {
-      // Default to last 6 months if no period specified
-      startDate = subMonths(today, 6);
-      endDate = today;
-      periodLabel = "Last 6 Months";
+      // Default to this month if no period specified
+      startDate = startOfMonth(now);
+      endDate = endOfMonth(now);
+      periodLabel = "This Month";
     }
 
     const filters: any = {
@@ -199,31 +211,88 @@ export default function AISummary() {
     return { filters, queryInfo };
   };
 
-  // Fetch transactions based on parsed query
+  // Build filters from quick filter UI
+  const buildQuickFilters = () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = new Date();
+    let periodLabel = "";
+
+    if (customStartDate && customEndDate) {
+      startDate = customStartDate;
+      endDate = customEndDate;
+      periodLabel = `${format(customStartDate, "MMM dd")} - ${format(customEndDate, "MMM dd, yyyy")}`;
+    } else {
+      // Default to this month
+      startDate = startOfMonth(now);
+      endDate = endOfMonth(now);
+      periodLabel = "This Month";
+    }
+
+    const filters: any = {
+      startDate: format(startDate, "yyyy-MM-dd"),
+      endDate: format(endDate, "yyyy-MM-dd"),
+    };
+
+    if (selectedType && selectedType !== "all") {
+      filters.type = selectedType;
+    }
+
+    return { filters, periodLabel };
+  };
+
+  // Fetch transactions based on parsed query or quick filters
   const { data: transactions = [], isLoading, refetch } = useQuery({
-    queryKey: ["transactions", parsedQuery ? parsedQuery.query : ""],
+    queryKey: ["transactions", parsedQuery ? parsedQuery.query : "quick", selectedCategory, selectedType, customStartDate, customEndDate],
     queryFn: () => {
+      if (useQuickFilters) {
+        const { filters } = buildQuickFilters();
+        return getTransactions(filters);
+      }
       if (!parsedQuery) return Promise.resolve([]);
       const categoryNames = categories.map(c => c.name);
       const parseResult = parseQuery(parsedQuery.query, categoryNames);
       if (!parseResult) return Promise.resolve([]);
       return getTransactions(parseResult.filters);
     },
-    enabled: !!parsedQuery && categories.length > 0,
+    enabled: (!!parsedQuery || useQuickFilters) && categories.length > 0,
   });
 
   // Calculate result when transactions are loaded
-  const result = parsedQuery ? (() => {
-    let filteredTransactions = transactions;
+  const result = useMemo(() => {
+    if (!useQuickFilters && !parsedQuery) return null;
 
-    // Filter by category if specified - use exact match only
-    if (parsedQuery.category) {
-      filteredTransactions = transactions.filter(t => {
-        const transactionCategory = t.category.toLowerCase().trim();
-        const queryCategory = parsedQuery.category!.toLowerCase().trim();
-        // Use exact match only to avoid false positives
-        return transactionCategory === queryCategory;
-      });
+    let filteredTransactions = transactions;
+    let periodLabel = "";
+    let type: "expense" | "income" | "both" = "both";
+
+    if (useQuickFilters) {
+      const { periodLabel: label } = buildQuickFilters();
+      periodLabel = label;
+      if (selectedType && selectedType !== "all") {
+        type = selectedType;
+      }
+      
+      // Filter by category if selected
+      if (selectedCategory && selectedCategory !== "all") {
+        filteredTransactions = transactions.filter(t => {
+          const transactionCategory = t.category.toLowerCase().trim();
+          const queryCategory = selectedCategory.toLowerCase().trim();
+          return transactionCategory === queryCategory;
+        });
+      }
+    } else if (parsedQuery) {
+      periodLabel = parsedQuery.period;
+      type = parsedQuery.type;
+      
+      // Filter by category if specified
+      if (parsedQuery.category) {
+        filteredTransactions = transactions.filter(t => {
+          const transactionCategory = t.category.toLowerCase().trim();
+          const queryCategory = parsedQuery.category!.toLowerCase().trim();
+          return transactionCategory === queryCategory;
+        });
+      }
     }
 
     // Calculate total
@@ -231,11 +300,14 @@ export default function AISummary() {
     const count = filteredTransactions.length;
 
     return {
-      ...parsedQuery,
       total,
       count,
+      type,
+      category: useQuickFilters ? (selectedCategory !== "all" ? selectedCategory : undefined) : parsedQuery?.category,
+      period: periodLabel,
+      query: useQuickFilters ? "Quick Filter" : parsedQuery?.query || "",
     };
-  })() : null;
+  }, [transactions, parsedQuery, useQuickFilters, selectedCategory, selectedType, customStartDate, customEndDate]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,6 +318,7 @@ export default function AISummary() {
     }
 
     setIsProcessing(true);
+    setUseQuickFilters(false);
     const categoryNames = categories.map(c => c.name);
     const parseResult = parseQuery(query, categoryNames);
     
@@ -260,6 +333,33 @@ export default function AISummary() {
     setTimeout(() => refetch(), 100);
   };
 
+  const handleQuickFilter = () => {
+    setUseQuickFilters(true);
+    setParsedQuery(null);
+    setQuery("");
+    setTimeout(() => refetch(), 100);
+  };
+
+  const clearQuickFilters = () => {
+    setSelectedCategory("all");
+    setSelectedType("all");
+    setCustomStartDate(undefined);
+    setCustomEndDate(undefined);
+    setUseQuickFilters(false);
+    setParsedQuery(null);
+  };
+
+  const quickFilterQueries = [
+    { label: "Total expenses this month", query: "Total expenses this month" },
+    { label: "Total income this month", query: "Total income this month" },
+    { label: "Expenses last month", query: "Total expenses last month" },
+    { label: "Expenses last 3 months", query: "Total expenses in last 3 months" },
+  ];
+
+  const expenseCategories = useMemo(() => {
+    return categories.filter(c => c.type === "expense").map(c => c.name);
+  }, [categories]);
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -271,9 +371,157 @@ export default function AISummary() {
             AI Summary
           </h1>
           <p className="text-sm text-muted-foreground">
-            Ask questions about your finances in natural language
+            Ask questions about your finances or use quick filters to analyze your spending
           </p>
         </div>
+
+        {/* Quick Filters */}
+        <Card className="mb-6 rounded-2xl shadow-card">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              Quick Filters
+            </CardTitle>
+            <CardDescription>
+              Filter by category, type, and date range
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Select value={selectedType} onValueChange={(value) => {
+                  setSelectedType(value as "expense" | "income" | "all");
+                  setUseQuickFilters(true);
+                }}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Transaction Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="expense">Expenses</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedCategory} onValueChange={(value) => {
+                  setSelectedCategory(value);
+                  setUseQuickFilters(true);
+                }}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Category (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {expenseCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="rounded-xl w-full justify-start text-left font-normal">
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {customStartDate && customEndDate ? (
+                        `${format(customStartDate, "MMM dd")} - ${format(customEndDate, "MMM dd, yyyy")}`
+                      ) : (
+                        <span>Select Date Range</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 rounded-xl" align="start">
+                    <div className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Start Date</label>
+                        <CalendarComponent
+                          mode="single"
+                          selected={customStartDate}
+                          onSelect={(date) => {
+                            setCustomStartDate(date);
+                            setUseQuickFilters(true);
+                            if (date && customEndDate && date > customEndDate) {
+                              setCustomEndDate(undefined);
+                            }
+                          }}
+                          className="rounded-md border"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">End Date</label>
+                        <CalendarComponent
+                          mode="single"
+                          selected={customEndDate}
+                          onSelect={(date) => {
+                            if (date && customStartDate && date < customStartDate) {
+                              toast.error("End date must be after start date");
+                              return;
+                            }
+                            setCustomEndDate(date);
+                            setUseQuickFilters(true);
+                            if (date && customStartDate) {
+                              setIsDatePickerOpen(false);
+                            }
+                          }}
+                          disabled={(date) => customStartDate ? date < customStartDate : false}
+                          className="rounded-md border"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setCustomStartDate(startOfMonth(new Date()));
+                            setCustomEndDate(endOfMonth(new Date()));
+                            setUseQuickFilters(true);
+                            setIsDatePickerOpen(false);
+                          }}
+                          className="flex-1"
+                        >
+                          This Month
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            const lastMonth = subMonths(new Date(), 1);
+                            setCustomStartDate(startOfMonth(lastMonth));
+                            setCustomEndDate(endOfMonth(lastMonth));
+                            setUseQuickFilters(true);
+                            setIsDatePickerOpen(false);
+                          }}
+                          className="flex-1"
+                        >
+                          Last Month
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleQuickFilter}
+                  disabled={selectedType === "all" && selectedCategory === "all" && !customStartDate}
+                  className="rounded-xl flex-1"
+                >
+                  Apply Filters
+                </Button>
+                {(selectedType !== "all" || selectedCategory !== "all" || customStartDate) && (
+                  <Button
+                    variant="outline"
+                    onClick={clearQuickFilters}
+                    className="rounded-xl"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Query Input */}
         <Card className="mb-8 rounded-2xl shadow-card">
@@ -290,7 +538,10 @@ export default function AISummary() {
                   type="text"
                   placeholder="e.g., How much I spent on Poland rent in last 6 months?"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setUseQuickFilters(false);
+                  }}
                   className="flex-1 h-11 rounded-xl border-input bg-background shadow-sm"
                 />
                 <Button
@@ -317,8 +568,22 @@ export default function AISummary() {
           <Card className="rounded-2xl shadow-card">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">Result</CardTitle>
-              <CardDescription>
-                {result.period} {result.category && `• ${result.category}`} {result.type !== "both" && `• ${result.type}`}
+              <CardDescription className="flex flex-wrap items-center gap-2">
+                <span>{result.period}</span>
+                {result.category && (
+                  <>
+                    <span>•</span>
+                    <Badge variant="secondary">{result.category}</Badge>
+                  </>
+                )}
+                {result.type !== "both" && (
+                  <>
+                    <span>•</span>
+                    <Badge variant={result.type === "expense" ? "destructive" : "default"}>
+                      {result.type}
+                    </Badge>
+                  </>
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -361,7 +626,7 @@ export default function AISummary() {
 
                   {result.count === 0 && (
                     <div className="py-8 text-center text-muted-foreground">
-                      No transactions found matching your query.
+                      No transactions found matching your criteria.
                     </div>
                   )}
                 </div>
@@ -378,30 +643,18 @@ export default function AISummary() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <div 
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => setQuery("How much I spent on Poland rent in last 6 months")}
-                >
-                  <p className="text-sm font-medium">How much I spent on Poland rent in last 6 months</p>
-                </div>
-                <div 
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => setQuery("Total expenses this month")}
-                >
-                  <p className="text-sm font-medium">Total expenses this month</p>
-                </div>
-                <div 
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => setQuery("How much I earned last month")}
-                >
-                  <p className="text-sm font-medium">How much I earned last month</p>
-                </div>
-                <div 
-                  className="p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => setQuery("Total groceries spending in last 3 months")}
-                >
-                  <p className="text-sm font-medium">Total groceries spending in last 3 months</p>
-                </div>
+                {quickFilterQueries.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
+                    onClick={() => {
+                      setQuery(item.query);
+                      setUseQuickFilters(false);
+                    }}
+                  >
+                    <p className="text-sm font-medium">{item.label}</p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -410,4 +663,3 @@ export default function AISummary() {
     </div>
   );
 }
-
