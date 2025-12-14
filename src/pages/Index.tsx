@@ -7,15 +7,15 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navigation />
       
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <main className="mx-auto max-w-7xl px-4 py-4 sm:py-6 lg:py-8 sm:px-6 lg:px-8">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[380px_1fr]">
           {/* Left Panel - Add Expense Form */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="lg:sticky lg:top-24 lg:self-start order-2 lg:order-1">
             <AddExpenseForm />
           </div>
           
           {/* Right Panel - Transaction List */}
-          <div>
+          <div className="order-1 lg:order-2">
             <TransactionList />
           </div>
         </div>

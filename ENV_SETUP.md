@@ -60,3 +60,4 @@ If you see 404 errors:
 4. Verify CORS is enabled in Supabase (should be by default)
 
 
+

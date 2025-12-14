@@ -263,7 +263,7 @@ export default function AISummary() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-4 sm:py-6 lg:py-8 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-xl font-semibold text-card-foreground flex items-center gap-2 mb-2">
@@ -285,7 +285,7 @@ export default function AISummary() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="text"
                   placeholder="e.g., How much I spent on Poland rent in last 6 months?"
@@ -296,12 +296,15 @@ export default function AISummary() {
                 <Button
                   type="submit"
                   disabled={isProcessing || !query.trim()}
-                  className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white px-6"
+                  className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white px-6 w-full sm:w-auto"
                 >
                   {isProcessing ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Search className="h-4 w-4" />
+                    <>
+                      <Search className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Search</span>
+                    </>
                   )}
                 </Button>
               </div>

@@ -1,19 +1,22 @@
 // Service Worker for PWA
-const CACHE_NAME = 'finance-2-v2';
+const CACHE_NAME = 'finance-2-v3';
 const STATIC_CACHE = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.ico'
 ];
 
-// Install event - cache static resources only
+// Install event - cache static resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        // Only cache the root and manifest - other routes are handled by SPA
+        console.log('[SW] Opened cache:', CACHE_NAME);
+        // Cache static resources
         return cache.addAll(STATIC_CACHE).catch((err) => {
-          console.log('Cache addAll failed:', err);
+          console.log('[SW] Cache addAll failed:', err);
         });
       })
   );
@@ -31,7 +34,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip cross-origin requests
+  // Skip cross-origin requests (except for same-origin)
   if (url.origin !== location.origin) {
     return;
   }
@@ -39,20 +42,29 @@ self.addEventListener('fetch', (event) => {
   // Handle navigation requests (HTML pages) - always serve index.html for SPA routes
   if (request.mode === 'navigate' || (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))) {
     event.respondWith(
-      caches.match('/').then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).catch(() => {
+      fetch(request)
+        .then((response) => {
+          // Cache the fetched response
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
           // If network fails, return cached index.html
-          return caches.match('/');
-        });
-      })
+          return caches.match('/').then((cachedResponse) => {
+            return cachedResponse || new Response('Offline', { 
+              status: 503,
+              headers: { 'Content-Type': 'text/html' }
+            });
+          });
+        })
     );
     return;
   }
 
-  // Handle static assets (JS, CSS, images, etc.)
+  // Handle static assets (JS, CSS, images, etc.) - Cache First strategy
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -70,11 +82,17 @@ self.addEventListener('fetch', (event) => {
         });
         return response;
       }).catch(() => {
-        // If it's an image or other asset, return a placeholder or cached version
+        // If it's an image, return a placeholder
         if (request.destination === 'image') {
-          return caches.match('/icon-192.png');
+          return caches.match('/icon-192.png').then((icon) => {
+            return icon || new Response('', { status: 404 });
+          });
         }
-        return new Response('Offline', { status: 503 });
+        // For other assets, return offline response
+        return new Response('Offline', { 
+          status: 503,
+          headers: { 'Content-Type': 'text/plain' }
+        });
       });
     })
   );
@@ -88,10 +106,14 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // Take control of all pages immediately
+      return self.clients.claim();
     })
   );
 });
