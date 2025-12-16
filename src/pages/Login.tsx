@@ -33,20 +33,49 @@ export default function Login() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithOAuth({
+      
+      // Get the current origin (works for both localhost and production)
+      const currentOrigin = window.location.origin;
+      const redirectUrl = `${currentOrigin}/dashboard`;
+      
+      // Store the intended redirect URL in localStorage
+      // This helps us redirect correctly even if Supabase redirects to the wrong URL
+      localStorage.setItem('auth_redirect_url', redirectUrl);
+      localStorage.setItem('auth_origin', currentOrigin);
+      
+      // Log for debugging
+      console.log("🔐 OAuth Sign In");
+      console.log("Current origin:", currentOrigin);
+      console.log("Redirect URL:", redirectUrl);
+      console.log("Stored in localStorage");
+      
+      // For localhost, we need to use the full URL in redirectTo
+      // Supabase will validate this against the allowed redirect URLs
+      const { error, data } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
         },
       });
 
       if (error) {
+        console.error("OAuth error:", error);
         toast.error(`Sign in failed: ${error.message}`);
+        // Clean up localStorage on error
+        localStorage.removeItem('auth_redirect_url');
+        localStorage.removeItem('auth_origin');
+        setLoading(false);
+      } else {
+        // If successful, the browser will redirect to Google
+        // Then Google redirects to Supabase, which redirects back to our app
+        console.log("OAuth redirect initiated:", data);
       }
     } catch (error) {
       console.error("Error signing in:", error);
       toast.error("An unexpected error occurred");
-    } finally {
+      localStorage.removeItem('auth_redirect_url');
+      localStorage.removeItem('auth_origin');
       setLoading(false);
     }
   };

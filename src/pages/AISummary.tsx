@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Sparkles, Search, TrendingUp, TrendingDown, Loader2, Calendar, Filter, X } from "lucide-react";
+import { Sparkles, Search, TrendingUp, TrendingDown, Loader2, Calendar, Filter, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "@/lib/transactions";
 import { getCategories } from "@/lib/categories";
@@ -11,9 +11,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, capitalizeFirst } from "@/lib/utils";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import type { Transaction } from "@/types/transaction";
 
 interface QueryResult {
   total: number;
@@ -22,6 +23,7 @@ interface QueryResult {
   category?: string;
   period: string;
   query: string;
+  transactions?: Transaction[];
 }
 
 export default function AISummary() {
@@ -262,7 +264,7 @@ export default function AISummary() {
   const result = useMemo(() => {
     if (!useQuickFilters && !parsedQuery) return null;
 
-    let filteredTransactions = transactions;
+    let filteredTransactions: Transaction[] = transactions;
     let periodLabel = "";
     let type: "expense" | "income" | "both" = "both";
 
@@ -306,6 +308,7 @@ export default function AISummary() {
       category: useQuickFilters ? (selectedCategory !== "all" ? selectedCategory : undefined) : parsedQuery?.category,
       period: periodLabel,
       query: useQuickFilters ? "Quick Filter" : parsedQuery?.query || "",
+      transactions: filteredTransactions,
     };
   }, [transactions, parsedQuery, useQuickFilters, selectedCategory, selectedType, customStartDate, customEndDate]);
 
@@ -357,7 +360,10 @@ export default function AISummary() {
   ];
 
   const expenseCategories = useMemo(() => {
-    return categories.filter(c => c.type === "expense").map(c => c.name);
+    return categories
+      .filter(c => c.type === "expense" && c.name && c.name.trim() !== "")
+      .map(c => c.name)
+      .filter(name => name && name.trim() !== ""); // Double check to remove any empty strings
   }, [categories]);
 
   return (
@@ -389,7 +395,7 @@ export default function AISummary() {
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Select value={selectedType} onValueChange={(value) => {
+                <Select value={selectedType || "all"} onValueChange={(value) => {
                   setSelectedType(value as "expense" | "income" | "all");
                   setUseQuickFilters(true);
                 }}>
@@ -403,7 +409,7 @@ export default function AISummary() {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedCategory} onValueChange={(value) => {
+                <Select value={selectedCategory || "all"} onValueChange={(value) => {
                   setSelectedCategory(value);
                   setUseQuickFilters(true);
                 }}>
@@ -412,11 +418,15 @@ export default function AISummary() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {expenseCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
+                    {expenseCategories.map((cat) => {
+                      // Ensure category name is not empty before rendering
+                      if (!cat || cat.trim() === "") return null;
+                      return (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
 
@@ -631,6 +641,84 @@ export default function AISummary() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Transaction Details List */}
+        {result && result.count > 0 && result.transactions && (
+          <Card className="rounded-2xl shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Transaction Details</CardTitle>
+              <CardDescription>
+                {result.count} {result.count === 1 ? 'transaction' : 'transactions'} found
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {result.transactions.map((transaction) => {
+                  const isIncome = transaction.type === "income";
+                  const displayName = transaction.description || transaction.category;
+                  
+                  return (
+                    <div
+                      key={transaction.id}
+                      className="group flex items-center justify-between rounded-xl border border-border bg-background p-4 transition-all hover:border-primary/20 hover:shadow-sm"
+                    >
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        {/* Icon */}
+                        <div
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold",
+                            isIncome
+                              ? "bg-green-100 text-green-600"
+                              : "bg-red-100 text-red-600"
+                          )}
+                        >
+                          {isIncome ? (
+                            <ArrowUp className="h-5 w-5" />
+                          ) : (
+                            <ArrowDown className="h-5 w-5" />
+                          )}
+                        </div>
+
+                        {/* Details */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-foreground">
+                            {displayName ? capitalizeFirst(displayName) : capitalizeFirst(transaction.category)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(transaction.date), "MMM dd, yyyy")}
+                            </p>
+                            {transaction.category && (
+                              <>
+                                <span className="text-muted-foreground">•</span>
+                                <Badge variant="outline" className="text-xs">
+                                  {transaction.category}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={cn(
+                            "text-base font-semibold whitespace-nowrap",
+                            isIncome ? "text-green-600" : "text-red-600"
+                          )}
+                        >
+                          {isIncome ? "+" : "-"}
+                          {formatCurrency(Math.abs(Number(transaction.amount)))}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         )}
