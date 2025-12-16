@@ -71,18 +71,18 @@ export function AddExpenseForm() {
   };
 
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-card animate-fade-in">
-      <h2 className="mb-6 text-xl font-semibold text-card-foreground">
+    <div className="rounded-2xl bg-card p-4 sm:p-6 shadow-card animate-fade-in w-full max-w-full">
+      <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-semibold text-card-foreground">
         Add Expense / Income
       </h2>
 
       {/* Toggle Buttons */}
-      <div className="mb-6 flex rounded-xl bg-muted p-1">
+      <div className="mb-4 sm:mb-6 flex rounded-xl bg-muted p-1">
         <button
           type="button"
           onClick={() => setType("expense")}
           className={cn(
-            "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+            "flex-1 rounded-lg py-2 sm:py-2.5 text-sm font-medium transition-all duration-200",
             type === "expense"
               ? "bg-red-600 text-white shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -94,7 +94,7 @@ export function AddExpenseForm() {
           type="button"
           onClick={() => setType("income")}
           className={cn(
-            "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+            "flex-1 rounded-lg py-2 sm:py-2.5 text-sm font-medium transition-all duration-200",
             type === "income"
               ? "bg-green-600 text-white shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -104,7 +104,7 @@ export function AddExpenseForm() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
         {/* Amount */}
         <div className="space-y-2">
           <Label htmlFor="amount" className="text-sm font-medium text-foreground">
@@ -120,7 +120,7 @@ export function AddExpenseForm() {
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="pl-14 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
+              className="pl-14 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full"
               required
             />
           </div>
@@ -137,7 +137,7 @@ export function AddExpenseForm() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
+              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full"
               required
             />
           </div>
@@ -149,7 +149,7 @@ export function AddExpenseForm() {
             Category
           </Label>
           <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm">
+            <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm w-full">
               <SelectValue placeholder="Select category">
                 {category ? (
                   (() => {
@@ -193,7 +193,7 @@ export function AddExpenseForm() {
             placeholder="Add a note..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[80px] rounded-xl border-input bg-background shadow-sm resize-none transition-shadow focus:shadow-md"
+            className="min-h-[80px] rounded-xl border-input bg-background shadow-sm resize-none transition-shadow focus:shadow-md w-full"
           />
         </div>
 
@@ -201,7 +201,7 @@ export function AddExpenseForm() {
         <Button
           type="submit"
           size="xl"
-          className="w-full mt-6"
+          className="w-full mt-4 sm:mt-6 h-11 sm:h-12"
           disabled={mutation.isPending}
         >
           {mutation.isPending
