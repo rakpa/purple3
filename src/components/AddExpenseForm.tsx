@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn, capitalizeFirst } from "@/lib/utils";
 import { createTransaction } from "@/lib/transactions";
 import { getCategories } from "@/lib/categories";
@@ -71,146 +72,149 @@ export function AddExpenseForm() {
   };
 
   return (
-    <div className="rounded-2xl bg-card p-4 sm:p-6 shadow-card animate-fade-in w-full max-w-full">
-      <h2 className="mb-4 sm:mb-6 text-lg sm:text-xl font-semibold text-card-foreground">
-        Add Expense / Income
-      </h2>
-
-      {/* Toggle Buttons */}
-      <div className="mb-4 sm:mb-6 flex rounded-xl bg-muted p-1">
-        <button
-          type="button"
-          onClick={() => setType("expense")}
-          className={cn(
-            "flex-1 rounded-lg py-2 sm:py-2.5 text-sm font-medium transition-all duration-200",
-            type === "expense"
-              ? "bg-red-600 text-white shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Expense
-        </button>
-        <button
-          type="button"
-          onClick={() => setType("income")}
-          className={cn(
-            "flex-1 rounded-lg py-2 sm:py-2.5 text-sm font-medium transition-all duration-200",
-            type === "income"
-              ? "bg-green-600 text-white shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Income
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-        {/* Amount */}
-        <div className="space-y-2">
-          <Label htmlFor="amount" className="text-sm font-medium text-foreground">
-            Amount
-          </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">
-              PLN
-            </span>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="pl-14 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full"
-              required
-            />
+    <Card className="rounded-2xl shadow-card w-full max-w-full overflow-hidden box-border">
+      <CardHeader className="p-4 sm:p-6">
+        <CardTitle>Add Expense / Income</CardTitle>
+        <CardDescription>Record your financial transactions</CardDescription>
+      </CardHeader>
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <form onSubmit={handleSubmit} className="space-y-5 w-full">
+          {/* Type Toggle */}
+          <div className="flex rounded-xl bg-muted p-1 w-full">
+            <button
+              type="button"
+              onClick={() => setType("expense")}
+              className={cn(
+                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+                type === "expense"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Expense
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("income")}
+              className={cn(
+                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+                type === "income"
+                  ? "bg-green-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Income
+            </button>
           </div>
-        </div>
 
-        {/* Date */}
-        <div className="space-y-2">
-          <Label htmlFor="date" className="text-sm font-medium text-foreground">
-            Date
-          </Label>
-          <div className="relative">
+          {/* Amount */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="amount" className="text-sm font-medium text-foreground">
+              Amount
+            </Label>
+            <div className="relative w-full">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10 pointer-events-none whitespace-nowrap">
+                PLN
+              </span>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="pl-16 pr-3 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full leading-normal"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Date */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="date" className="text-sm font-medium text-foreground">
+              Date
+            </Label>
             <Input
               id="date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full"
+              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full px-3 leading-normal"
               required
             />
           </div>
-        </div>
 
-        {/* Category */}
-        <div className="space-y-2">
-          <Label htmlFor="category" className="text-sm font-medium text-foreground">
-            Category
-          </Label>
-          <Select value={category} onValueChange={setCategory} required>
-            <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm w-full">
-              <SelectValue placeholder="Select category">
-                {category ? (
-                  (() => {
-                    const selectedCat = categories.find(c => c.name === category);
-                    return selectedCat ? (
+          {/* Category */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="category" className="text-sm font-medium text-foreground">
+              Category
+            </Label>
+            <Select value={category} onValueChange={setCategory} required>
+              <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm w-full px-3 leading-normal">
+                <SelectValue placeholder="Select category" className="truncate">
+                  {category ? (
+                    (() => {
+                      const selectedCat = categories.find(c => c.name === category);
+                      return selectedCat ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <CategoryIcon iconName={selectedCat.icon} size={18} className="shrink-0" />
+                          <span className="truncate">{category}</span>
+                        </div>
+                      ) : (
+                        <span className="truncate">{category}</span>
+                      );
+                    })()
+                  ) : null}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl bg-popover border-border shadow-elevated">
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name} className="rounded-lg">
                       <div className="flex items-center gap-2">
-                        <CategoryIcon iconName={selectedCat.icon} size={16} />
-                        <span>{category}</span>
+                        <CategoryIcon iconName={cat.icon} size={18} />
+                        <span>{cat.name}</span>
                       </div>
-                    ) : category;
-                  })()
-                ) : null}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="rounded-xl bg-popover border-border shadow-elevated">
-              {categories.length > 0 ? (
-                categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.name} className="rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <CategoryIcon iconName={cat.icon} size={18} />
-                      <span>{cat.name}</span>
-                    </div>
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="other" className="rounded-lg">
+                    Other
                   </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="other" className="rounded-lg">
-                  Other
-                </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description" className="text-sm font-medium text-foreground">
-            Description
-          </Label>
-          <Textarea
-            id="description"
-            placeholder="Add a note..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[80px] rounded-xl border-input bg-background shadow-sm resize-none transition-shadow focus:shadow-md w-full"
-          />
-        </div>
+          {/* Description */}
+          <div className="space-y-2 w-full">
+            <Label htmlFor="description" className="text-sm font-medium text-foreground">
+              Description
+            </Label>
+            <Textarea
+              id="description"
+              placeholder="Add a note..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-[80px] rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md resize-none w-full px-3 py-2 leading-normal"
+            />
+          </div>
 
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          size="xl"
-          className="w-full mt-4 sm:mt-6 h-11 sm:h-12"
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending
-            ? "Adding..."
-            : type === "expense"
-            ? "Add Expense"
-            : "Add Income"}
-        </Button>
-      </form>
-    </div>
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            size="xl"
+            className="w-full mt-6"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending
+              ? "Adding..."
+              : type === "expense"
+              ? "Add Expense"
+              : "Add Income"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

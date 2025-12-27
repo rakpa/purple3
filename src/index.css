@@ -104,7 +104,9 @@
   * {
     @apply border-border;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    box-sizing: border-box;
   }
+
 
   html {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -190,5 +192,98 @@
   * {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent text cutoff in inputs on mobile */
+  @media (max-width: 768px) {
+    /* Prevent horizontal overflow globally */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    /* Ensure root container doesn't overflow */
+    #root {
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* Ensure all main containers are constrained */
+    main {
+      max-width: 100vw;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    /* Ensure grid doesn't overflow */
+    .grid {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="date"],
+    input[type="email"],
+    input[type="tel"],
+    textarea {
+      line-height: 1.5;
+      box-sizing: border-box;
+      max-width: 100%;
+      width: 100%;
+      vertical-align: middle;
+    }
+
+    input[type="date"] {
+      color-scheme: light;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      margin-left: 0;
+      padding: 0.25rem;
+      cursor: pointer;
+    }
+
+    /* Ensure proper text alignment in inputs */
+    input::placeholder,
+    textarea::placeholder {
+      line-height: 1.5;
+      vertical-align: middle;
+    }
+
+    /* Fix input text vertical alignment */
+    input[type="number"] {
+      text-align: left;
+    }
+
+    /* Ensure Select components have proper padding */
+    [role="combobox"],
+    [data-radix-select-trigger] {
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Ensure SelectValue text is properly aligned */
+    [data-radix-select-value] {
+      line-height: 1.5;
+      display: flex;
+      align-items: center;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    /* Ensure Card components don't overflow */
+    [class*="rounded-2xl"],
+    [class*="shadow-card"] {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Ensure all form elements are constrained */
+    form {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
   }
 }

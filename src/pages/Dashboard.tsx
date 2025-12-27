@@ -25,7 +25,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
 import { toast } from "sonner";
 import { cn, capitalizeFirst } from "@/lib/utils";
 import type { Transaction } from "@/types/transaction";
@@ -155,40 +155,6 @@ export default function Dashboard() {
       .sort((a, b) => b.amount - a.amount);
   }, [transactions]);
 
-  // Balance trend data (last 6 months) - simplified for now
-  const balanceTrend = useMemo(() => {
-    const months = [];
-    let runningBalance = 0;
-    const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const month = subMonths(now, i);
-      const monthStart = format(startOfMonth(month), "yyyy-MM-dd");
-      const monthEnd = format(endOfMonth(month), "yyyy-MM-dd");
-      
-      // Calculate balance for this month from transactions
-      const monthTransactions = transactions.filter((t) => {
-        const tDate = format(new Date(t.date), "yyyy-MM-dd");
-        return tDate >= monthStart && tDate <= monthEnd;
-      });
-      
-      const monthIncome = monthTransactions
-        .filter((t) => t.type === "income")
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-      
-      const monthExpenses = monthTransactions
-        .filter((t) => t.type === "expense")
-        .reduce((sum, t) => sum + Number(t.amount), 0);
-      
-      runningBalance += monthIncome - monthExpenses;
-      
-      months.push({
-        month: format(month, "MMM"),
-        balance: Number(runningBalance.toFixed(2)),
-      });
-    }
-    return months;
-  }, [transactions]);
 
   // Recent transactions (filtered and sorted)
   const recentTransactions = useMemo(() => {
@@ -250,10 +216,6 @@ export default function Dashboard() {
     const config: Record<string, { label: string; color?: string }> = {
       amount: {
         label: "Amount",
-      },
-      balance: {
-        label: "Balance",
-        color: "hsl(var(--primary))",
       },
     };
 
@@ -510,14 +472,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 rounded-xl">
-                <TabsTrigger value="balance" className="rounded-lg">
-                  Balance Trend
-                </TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 rounded-xl p-1">
                 <TabsTrigger 
                   value="income" 
                   className={cn(
-                    "rounded-lg data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                    "rounded-lg h-9 px-4 py-1.5 text-sm font-medium",
+                    "data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-none",
+                    "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground",
+                    "transition-colors"
                   )}
                 >
                   Income Breakdown
@@ -525,31 +487,15 @@ export default function Dashboard() {
                 <TabsTrigger 
                   value="expense" 
                   className={cn(
-                    "rounded-lg data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                    "rounded-lg h-9 px-4 py-1.5 text-sm font-medium",
+                    "data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-none",
+                    "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground",
+                    "transition-colors"
                   )}
                 >
                   Expense Breakdown
                 </TabsTrigger>
               </TabsList>
-
-              <TabsContent value="balance" className="mt-6">
-                <ChartContainer config={chartConfig} className="h-[300px]">
-                  <ResponsiveContainer>
-                    <LineChart data={balanceTrend}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </TabsContent>
 
               <TabsContent value="income" className="mt-6">
                 {incomeBreakdown.length > 0 ? (

@@ -361,9 +361,9 @@ export default function AISummary() {
 
   const expenseCategories = useMemo(() => {
     return categories
-      .filter(c => c.type === "expense" && c.name && c.name.trim() !== "")
-      .map(c => c.name)
-      .filter(name => name && name.trim() !== ""); // Double check to remove any empty strings
+      .filter(c => c.type === "expense" && c.name && typeof c.name === "string" && c.name.trim() !== "")
+      .map(c => c.name.trim())
+      .filter((name): name is string => name !== "" && name.length > 0); // Ensure no empty strings
   }, [categories]);
 
   return (
@@ -418,15 +418,13 @@ export default function AISummary() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
-                    {expenseCategories.map((cat) => {
-                      // Ensure category name is not empty before rendering
-                      if (!cat || cat.trim() === "") return null;
-                      return (
+                    {expenseCategories
+                      .filter((cat) => cat && cat.trim() !== "")
+                      .map((cat) => (
                         <SelectItem key={cat} value={cat}>
                           {cat}
                         </SelectItem>
-                      );
-                    })}
+                      ))}
                   </SelectContent>
                 </Select>
 
