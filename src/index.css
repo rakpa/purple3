@@ -172,6 +172,26 @@
   }
 }
 
+/* Date input fix - Outside layers for maximum specificity */
+input#date,
+input[type="date"].date-input-mobile,
+.date-input-mobile[type="date"] {
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  max-height: 2.75rem !important;
+}
+
+@media (max-width: 768px) {
+  input#date,
+  input[type="date"].date-input-mobile,
+  .date-input-mobile[type="date"],
+  input[type="date"] {
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    max-height: 2.75rem !important;
+  }
+}
+
 /* PWA and Mobile Optimizations */
 @layer base {
   /* Safe area support for notched devices */
@@ -263,7 +283,8 @@
     }
 
     input[type="date"],
-    input.date-input-mobile {
+    input.date-input-mobile,
+    input#date {
       color-scheme: light;
       height: 2.75rem !important;
       min-height: 2.75rem !important;
