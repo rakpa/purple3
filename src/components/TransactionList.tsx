@@ -199,74 +199,77 @@ export function TransactionList() {
             return (
               <div
                 key={transaction.id}
-                className="group flex items-center justify-between rounded-xl border border-border bg-background p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-sm"
+                className="group flex items-start gap-3 sm:gap-4 rounded-xl border border-border bg-background p-3 sm:p-4 transition-all duration-200 hover:border-primary/20 hover:shadow-sm"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                  {/* Icon */}
-                  <div
-                    className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold",
-                      transaction.type === "income"
-                        ? "bg-success/10 text-success"
-                        : "bg-destructive/10 text-destructive"
-                    )}
-                  >
-                    {categoryName.charAt(0).toUpperCase()}
-                  </div>
-
-                  {/* Category - Main Title */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-foreground">
-                      {categoryName}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(transaction.date)}
-                    </p>
-                  </div>
-
-                  {/* Description - Middle Column */}
-                  {transaction.description && (
-                    <div className="min-w-0 flex-1 hidden sm:block">
-                      <p className="text-sm text-muted-foreground truncate">
-                        {transaction.description}
-                      </p>
-                    </div>
+                {/* Icon */}
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold",
+                    transaction.type === "income"
+                      ? "bg-success/10 text-success"
+                      : "bg-destructive/10 text-destructive"
                   )}
+                >
+                  {categoryName.charAt(0).toUpperCase()}
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 min-w-0 pr-2">
+                  {/* Category/Description */}
+                  <div className="mb-1 sm:mb-1.5">
+                    <p className="font-medium text-foreground text-sm sm:text-base leading-tight">
+                      {transaction.description ? (
+                        <span className="block truncate">{transaction.description}</span>
+                      ) : (
+                        <span className="block truncate">{categoryName}</span>
+                      )}
+                    </p>
+                    {transaction.description && (
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                        {categoryName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Date */}
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(transaction.date)}
+                  </p>
                 </div>
 
                 {/* Amount & Actions */}
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-end gap-1.5 sm:gap-2 shrink-0">
                   <span
                     className={cn(
-                      "text-base font-semibold whitespace-nowrap",
+                      "text-sm sm:text-base font-semibold whitespace-nowrap",
                       transaction.type === "income" ? "text-success" : "text-destructive"
                     )}
                   >
-                    {transaction.type === "income" ? "+" : ""}
-                {Math.abs(transaction.amount).toLocaleString("pl-PL", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} PLN
+                    {transaction.type === "income" ? "+" : "-"}
+                    {Math.abs(transaction.amount).toLocaleString("pl-PL", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })} PLN
                   </span>
 
-                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex gap-1 opacity-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground"
                       onClick={() => toast.info("Edit functionality coming soon!")}
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive"
                       onClick={() => handleDelete(transaction.id)}
                       disabled={deleteMutation.isPending}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
