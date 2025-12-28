@@ -139,8 +139,16 @@ export function AddExpenseForm() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full leading-normal"
-              style={{ paddingLeft: '0.75rem', paddingRight: '0.75rem' }}
+              className="date-input-mobile h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full leading-normal"
+              style={{ 
+                height: '2.75rem',
+                minHeight: '2.75rem',
+                maxHeight: '2.75rem',
+                paddingTop: '0.625rem',
+                paddingBottom: '0.625rem',
+                paddingLeft: '0.75rem',
+                paddingRight: '0.75rem'
+              }}
               required
             />
           </div>
