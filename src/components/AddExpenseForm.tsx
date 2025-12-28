@@ -134,26 +134,30 @@ export function AddExpenseForm() {
             <Label htmlFor="date" className="text-sm font-medium text-foreground">
               Date
             </Label>
-            <input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="date-input-mobile flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm transition-shadow focus:shadow-md leading-normal"
-              style={{ 
-                height: '2.75rem',
-                minHeight: '2.75rem',
-                maxHeight: '2.75rem',
-                paddingTop: '0.625rem',
-                paddingBottom: '0.625rem',
-                paddingLeft: '0.75rem',
-                paddingRight: '0.75rem',
-                fontSize: '0.875rem',
-                lineHeight: '1.5',
-                boxSizing: 'border-box'
-              }}
-              required
-            />
+            <div className="relative w-full">
+              <input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="date-input-mobile w-full rounded-xl border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm transition-shadow focus:shadow-md leading-normal"
+                style={{ 
+                  height: '2.75rem',
+                  minHeight: '2.75rem',
+                  maxHeight: '2.75rem',
+                  width: '100%',
+                  maxWidth: '100%',
+                  paddingTop: '0.625rem',
+                  paddingBottom: '0.625rem',
+                  paddingLeft: '0.75rem',
+                  paddingRight: '0.75rem',
+                  fontSize: '0.875rem',
+                  lineHeight: '1.5',
+                  boxSizing: 'border-box'
+                }}
+                required
+              />
+            </div>
           </div>
 
           {/* Category */}
