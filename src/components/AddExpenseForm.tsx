@@ -72,15 +72,15 @@ export function AddExpenseForm() {
   };
 
   return (
-    <Card className="rounded-2xl shadow-card w-full max-w-full overflow-hidden box-border">
-      <CardHeader className="p-4 sm:p-6">
+    <Card className="rounded-2xl shadow-card">
+      <CardHeader>
         <CardTitle>Add Expense / Income</CardTitle>
         <CardDescription>Record your financial transactions</CardDescription>
       </CardHeader>
-      <CardContent className="p-4 sm:p-6 pt-0">
-        <form onSubmit={handleSubmit} className="space-y-5 w-full">
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Type Toggle */}
-          <div className="flex rounded-xl bg-muted p-1 w-full">
+          <div className="flex rounded-xl bg-muted p-1">
             <button
               type="button"
               onClick={() => setType("expense")}
@@ -108,12 +108,12 @@ export function AddExpenseForm() {
           </div>
 
           {/* Amount */}
-          <div className="space-y-2 w-full">
+          <div className="space-y-2">
             <Label htmlFor="amount" className="text-sm font-medium text-foreground">
               Amount
             </Label>
-            <div className="relative w-full">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10 pointer-events-none whitespace-nowrap">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10 pointer-events-none">
                 PLN
               </span>
               <Input
@@ -123,62 +123,44 @@ export function AddExpenseForm() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pl-16 pr-3 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md w-full leading-normal"
+                className="pl-14 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
                 required
               />
             </div>
           </div>
 
           {/* Date */}
-          <div className="space-y-2 w-full">
+          <div className="space-y-2">
             <Label htmlFor="date" className="text-sm font-medium text-foreground">
               Date
             </Label>
-            <div className="relative w-full">
-              <input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="date-input-mobile w-full rounded-xl border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm transition-shadow focus:shadow-md leading-normal"
-                style={{ 
-                  height: '2.75rem',
-                  minHeight: '2.75rem',
-                  maxHeight: '2.75rem',
-                  width: '100%',
-                  maxWidth: '100%',
-                  paddingTop: '0.625rem',
-                  paddingBottom: '0.625rem',
-                  paddingLeft: '0.75rem',
-                  paddingRight: '0.75rem',
-                  fontSize: '0.875rem',
-                  lineHeight: '1.5',
-                  boxSizing: 'border-box'
-                }}
-                required
-              />
-            </div>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
+              required
+            />
           </div>
 
           {/* Category */}
-          <div className="space-y-2 w-full">
+          <div className="space-y-2">
             <Label htmlFor="category" className="text-sm font-medium text-foreground">
               Category
             </Label>
             <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm w-full px-3 leading-normal">
-                <SelectValue placeholder="Select category" className="truncate">
+              <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm">
+                <SelectValue placeholder="Select category">
                   {category ? (
                     (() => {
                       const selectedCat = categories.find(c => c.name === category);
                       return selectedCat ? (
-                        <div className="flex items-center gap-2 min-w-0">
-                          <CategoryIcon iconName={selectedCat.icon} size={18} className="shrink-0" />
-                          <span className="truncate">{category}</span>
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon iconName={selectedCat.icon} size={18} />
+                          <span>{category}</span>
                         </div>
-                      ) : (
-                        <span className="truncate">{category}</span>
-                      );
+                      ) : category;
                     })()
                   ) : null}
                 </SelectValue>
@@ -203,7 +185,7 @@ export function AddExpenseForm() {
           </div>
 
           {/* Description */}
-          <div className="space-y-2 w-full">
+          <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-medium text-foreground">
               Description
             </Label>
@@ -212,7 +194,7 @@ export function AddExpenseForm() {
               placeholder="Add a note..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[80px] rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md resize-none w-full px-3 py-2 leading-normal"
+              className="min-h-[80px] rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md resize-none"
             />
           </div>
 
