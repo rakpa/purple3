@@ -136,13 +136,13 @@ export function AddExpenseForm() {
             </div>
           </div>
 
-          {/* ✅ Date (Styled Option A) */}
+          {/* ✅ Date – Custom Styled (iOS Safe) */}
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
 
-            <div className="relative">
-              {/* Visible formatted date */}
-              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-medium text-foreground">
+            <div className="relative h-11">
+              {/* Visible UI */}
+              <div className="absolute inset-0 flex items-center rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-sm">
                 {new Date(date).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -150,14 +150,13 @@ export function AddExpenseForm() {
                 })}
               </div>
 
-              {/* Native date input (hidden text) */}
-              <Input
+              {/* Native input (invisible) */}
+              <input
                 id="date"
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-11 w-full rounded-xl shadow-sm
-                           text-transparent caret-transparent pl-3"
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
                 required
               />
             </div>
