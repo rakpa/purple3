@@ -544,16 +544,16 @@ export default function India() {
               </div>
             ) : currencyEntries.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full table-fixed">
+                <table className="w-full">
                   {/* Table Header */}
                   <thead>
                     <tr className="bg-black text-white">
-                      <th className="px-5 py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 w-48">Date</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold font-sans border-r border-gray-700">Description</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 w-40">Amount (PLN)</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 w-40">Amount (INR)</th>
+                      <th className="px-3 sm:px-5 py-3 sm:py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 min-w-[120px] sm:w-48">Date</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px]">Description</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px] sm:w-40">Amount (PLN)</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px] sm:w-40">Amount (INR)</th>
                       {isEditMode && (
-                        <th className="px-6 py-4 text-center text-xs font-semibold font-sans w-24">Actions</th>
+                        <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs font-semibold font-sans min-w-[80px] sm:w-24">Actions</th>
                       )}
                     </tr>
                   </thead>
@@ -567,37 +567,39 @@ export default function India() {
                           index % 2 === 0 ? "bg-background" : "bg-muted/30"
                         )}
                       >
-                        <td className="px-5 py-4 text-sm text-foreground font-sans border-r border-gray-300 w-48">
+                        <td className="px-3 sm:px-5 py-3 sm:py-4 text-xs sm:text-sm text-foreground font-sans border-r border-gray-300 min-w-[120px] sm:w-48 whitespace-nowrap">
                           {formatDate(entry.date)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-foreground font-sans border-r border-gray-300">
-                          {entry.description}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground font-sans border-r border-gray-300 min-w-[100px]">
+                          <div className="max-w-[120px] sm:max-w-none break-words overflow-hidden">
+                            {entry.description}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-foreground text-right font-sans tabular-nums border-r border-gray-300 w-40">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground text-right font-sans tabular-nums border-r border-gray-300 min-w-[100px] sm:w-40 whitespace-nowrap">
                           {formatPLN(entry.pln_amount)} PLN
                         </td>
-                        <td className="px-6 py-4 text-sm text-foreground text-right font-sans tabular-nums border-r border-gray-300 w-40">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground text-right font-sans tabular-nums border-r border-gray-300 min-w-[100px] sm:w-40 whitespace-nowrap">
                           {formatINR(entry.inr_amount)} INR
                         </td>
                         {isEditMode && (
-                          <td className="px-6 py-4 text-center">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-center min-w-[80px] sm:w-24">
                             <div className="flex items-center justify-center gap-1">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground"
                                 onClick={() => handleEdit(entry)}
                               >
-                                <Edit2 className="h-4 w-4" />
+                                <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                                className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-red-600"
                                 onClick={() => handleDelete(entry.id)}
                                 disabled={deleteMutation.isPending}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                               </Button>
                             </div>
                           </td>
