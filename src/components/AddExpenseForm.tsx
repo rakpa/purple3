@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn, capitalizeFirst } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { createTransaction } from "@/lib/transactions";
 import { getCategories } from "@/lib/categories";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { TransactionType } from "@/types/transaction";
 import { CategoryIcon } from "@/components/CategoryIcon";
@@ -23,40 +28,40 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 export function AddExpenseForm() {
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+
   const queryClient = useQueryClient();
 
-  // Fetch categories from database
   const { data: categories = [] } = useQuery({
     queryKey: ["categories", type],
     queryFn: () => getCategories(type),
   });
 
-
   const mutation = useMutation({
     mutationFn: createTransaction,
     onSuccess: () => {
-      toast.success(type === "expense" ? "Expense added successfully!" : "Income added successfully!");
+      toast.success(
+        type === "expense"
+          ? "Expense added successfully!"
+          : "Income added successfully!"
+      );
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      // Reset form
       setAmount("");
       setDescription("");
       setCategory("");
     },
     onError: (error: Error) => {
-      console.error("Error creating transaction:", error);
-      const errorMessage = error.message.includes("relation") || error.message.includes("permission")
-        ? "Database not set up. Please run supabase-setup.sql in your Supabase dashboard."
-        : error.message;
-      toast.error(`Failed to add ${type}: ${errorMessage}`);
+      toast.error(`Failed to add ${type}: ${error.message}`);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!category) {
       toast.error("Please select a category");
       return;
@@ -75,8 +80,11 @@ export function AddExpenseForm() {
     <Card className="rounded-2xl shadow-card">
       <CardHeader>
         <CardTitle>Add Expense / Income</CardTitle>
-        <CardDescription>Record your financial transactions</CardDescription>
+        <CardDescription>
+          Record your financial transactions
+        </CardDescription>
       </CardHeader>
+
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Type Toggle */}
@@ -85,7 +93,7 @@ export function AddExpenseForm() {
               type="button"
               onClick={() => setType("expense")}
               className={cn(
-                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
                 type === "expense"
                   ? "bg-red-600 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -93,11 +101,12 @@ export function AddExpenseForm() {
             >
               Expense
             </button>
+
             <button
               type="button"
               onClick={() => setType("income")}
               className={cn(
-                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all duration-200",
+                "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
                 type === "income"
                   ? "bg-green-600 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -109,11 +118,9 @@ export function AddExpenseForm() {
 
           {/* Amount */}
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-sm font-medium text-foreground">
-              Amount
-            </Label>
+            <Label htmlFor="amount">Amount</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium z-10 pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground pointer-events-none">
                 PLN
               </span>
               <Input
@@ -123,82 +130,72 @@ export function AddExpenseForm() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="pl-14 h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
+                className="pl-14 h-11 rounded-xl shadow-sm"
                 required
               />
             </div>
           </div>
 
-          {/* Date */}
+          {/* ✅ Date (Styled Option A) */}
           <div className="space-y-2">
-            <Label htmlFor="date" className="text-sm font-medium text-foreground">
-              Date
-            </Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-11 w-full rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
-              required
-            />
+            <Label htmlFor="date">Date</Label>
+
+            <div className="relative">
+              {/* Visible formatted date */}
+              <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-medium text-foreground">
+                {new Date(date).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </div>
+
+              {/* Native date input (hidden text) */}
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="h-11 w-full rounded-xl shadow-sm
+                           text-transparent caret-transparent pl-3"
+                required
+              />
+            </div>
           </div>
 
           {/* Category */}
           <div className="space-y-2">
-            <Label htmlFor="category" className="text-sm font-medium text-foreground">
-              Category
-            </Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger className="h-11 rounded-xl border-input bg-background shadow-sm">
-                <SelectValue placeholder="Select category">
-                  {category ? (
-                    (() => {
-                      const selectedCat = categories.find(c => c.name === category);
-                      return selectedCat ? (
-                        <div className="flex items-center gap-2">
-                          <CategoryIcon iconName={selectedCat.icon} size={18} />
-                          <span>{category}</span>
-                        </div>
-                      ) : category;
-                    })()
-                  ) : null}
-                </SelectValue>
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-11 rounded-xl shadow-sm">
+                <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl bg-popover border-border shadow-elevated">
-                {categories.length > 0 ? (
-                  categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.name} className="rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CategoryIcon iconName={cat.icon} size={18} />
-                        <span>{cat.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="other" className="rounded-lg">
-                    Other
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.name}>
+                    <div className="flex items-center gap-2">
+                      <CategoryIcon iconName={cat.icon} size={18} />
+                      {cat.name}
+                    </div>
                   </SelectItem>
-                )}
+                ))}
               </SelectContent>
             </Select>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium text-foreground">
-              Description
-            </Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               placeholder="Add a note..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[80px] rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md resize-none"
+              className="min-h-[80px] rounded-xl shadow-sm resize-none"
             />
           </div>
 
-          {/* Submit Button */}
+          {/* Submit */}
           <Button
             type="submit"
             size="xl"
