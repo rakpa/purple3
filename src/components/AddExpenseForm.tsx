@@ -139,7 +139,7 @@ export function AddExpenseForm() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="h-11 rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
+              className="h-11 w-full rounded-xl border-input bg-background shadow-sm transition-shadow focus:shadow-md"
               required
             />
           </div>
