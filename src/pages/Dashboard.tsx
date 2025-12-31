@@ -197,7 +197,21 @@ export default function Dashboard() {
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "MMM dd, yyyy");
+      const date = new Date(dateString);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      // Check if date is today
+      if (date.toDateString() === today.toDateString()) {
+        return "Today";
+      }
+      // Check if date is yesterday
+      if (date.toDateString() === yesterday.toDateString()) {
+        return "Yesterday";
+      }
+      // For mobile, use shorter format
+      return format(date, "MMM dd, yyyy");
     } catch {
       return dateString;
     }
@@ -605,7 +619,7 @@ export default function Dashboard() {
                 Loading transactions...
               </div>
             ) : recentTransactions.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {recentTransactions.map((transaction) => {
                   const displayName = transaction.description || transaction.category;
                   const isIncome = transaction.type === "income";
@@ -613,41 +627,39 @@ export default function Dashboard() {
                   return (
                     <div
                       key={transaction.id}
-                      className="group flex items-center justify-between rounded-xl border border-border bg-background p-4 transition-all hover:border-primary/20 hover:shadow-sm"
+                      className="group flex items-center gap-3 sm:gap-4 rounded-xl border border-border bg-background p-3 sm:p-4 transition-all hover:border-primary/20 hover:shadow-sm"
                     >
-                      <div className="flex items-center gap-4 min-w-0">
-                        {/* Icon */}
-                        <div
-                          className={cn(
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold",
-                            isIncome
-                              ? "bg-green-100 text-green-600"
-                              : "bg-red-100 text-red-600"
-                          )}
-                        >
-                          {isIncome ? (
-                            <ArrowUp className="h-5 w-5" />
-                          ) : (
-                            <ArrowDown className="h-5 w-5" />
-                          )}
-                        </div>
+                      {/* Icon */}
+                      <div
+                        className={cn(
+                          "flex h-12 w-12 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl",
+                          isIncome
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        )}
+                      >
+                        {isIncome ? (
+                          <ArrowUp className="h-5 w-5 sm:h-5 sm:w-5" />
+                        ) : (
+                          <ArrowDown className="h-5 w-5 sm:h-5 sm:w-5" />
+                        )}
+                      </div>
 
-                        {/* Details */}
-                        <div className="min-w-0">
-                        <p className="truncate font-medium text-foreground">
+                      {/* Details */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <p className="font-medium text-foreground text-sm sm:text-base line-clamp-2 break-words">
                           {displayName ? capitalizeFirst(displayName) : capitalizeFirst(transaction.category)}
                         </p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(transaction.date)}
-                          </p>
-                        </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {formatDate(transaction.date)}
+                        </p>
                       </div>
 
                       {/* Amount & Actions */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3 shrink-0">
                         <span
                           className={cn(
-                            "text-base font-semibold whitespace-nowrap",
+                            "text-sm sm:text-base font-semibold whitespace-nowrap",
                             isIncome ? "text-green-600" : "text-red-600"
                           )}
                         >
@@ -655,23 +667,23 @@ export default function Dashboard() {
                           {formatCurrency(Math.abs(Number(transaction.amount)))}
                         </span>
 
-                        <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground"
                             onClick={() => toast.info("Edit functionality coming soon!")}
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-red-600"
                             onClick={() => handleDelete(transaction.id)}
                             disabled={deleteMutation.isPending}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </Button>
                         </div>
                       </div>
