@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import { Sparkles, Search, TrendingUp, TrendingDown, Loader2, Calendar, Filter, X, ArrowUp, ArrowDown } from "lucide-react";
+import { Sparkles, Search, TrendingUp, TrendingDown, Loader2, Calendar, Filter, X, ArrowUp, ArrowDown, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getTransactions } from "@/lib/transactions";
 import { getCategories } from "@/lib/categories";
+import { getCurrencyEntries } from "@/lib/currency-entries";
 import { format, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays } from "date-fns";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { formatCurrency, cn, capitalizeFirst } from "@/lib/utils";
+import { formatPLN, formatINR } from "@/lib/currency-format";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import type { Transaction } from "@/types/transaction";
+import type { CurrencyEntry } from "@/types/currency-entry";
 
 interface QueryResult {
   total: number;
@@ -259,6 +262,75 @@ export default function AISummary() {
     },
     enabled: (!!parsedQuery || useQuickFilters) && categories.length > 0,
   });
+
+  // Check if query might relate to India/currency entries
+  const shouldFetchCurrencyEntries = useMemo(() => {
+    if (!parsedQuery && !useQuickFilters) return false;
+    
+    const queryText = parsedQuery?.query.toLowerCase() || "";
+    const categoryText = parsedQuery?.category?.toLowerCase() || selectedCategory?.toLowerCase() || "";
+    
+    // Keywords that might indicate India/currency entries
+    const indiaKeywords = ["poland", "rent", "india", "pln", "inr", "currency", "polish"];
+    
+    // Check if query or category contains India-related keywords
+    const hasIndiaKeyword = indiaKeywords.some(keyword => 
+      queryText.includes(keyword) || categoryText.includes(keyword)
+    );
+    
+    return hasIndiaKeyword;
+  }, [parsedQuery, useQuickFilters, selectedCategory]);
+
+  // Get date range for currency entries
+  const currencyEntriesDateRange = useMemo(() => {
+    if (useQuickFilters) {
+      const { filters } = buildQuickFilters();
+      return {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      };
+    }
+    if (!parsedQuery) return null;
+    const categoryNames = categories.map(c => c.name);
+    const parseResult = parseQuery(parsedQuery.query, categoryNames);
+    if (!parseResult) return null;
+    return {
+      startDate: parseResult.filters.startDate,
+      endDate: parseResult.filters.endDate,
+    };
+  }, [parsedQuery, useQuickFilters, selectedCategory, selectedType, customStartDate, customEndDate, categories]);
+
+  // Fetch currency entries if query relates to India
+  const { data: currencyEntries = [], isLoading: isLoadingCurrencyEntries } = useQuery({
+    queryKey: ["currency-entries", currencyEntriesDateRange?.startDate, currencyEntriesDateRange?.endDate],
+    queryFn: () => {
+      if (!currencyEntriesDateRange) return Promise.resolve([]);
+      return getCurrencyEntries({
+        startDate: currencyEntriesDateRange.startDate,
+        endDate: currencyEntriesDateRange.endDate,
+      });
+    },
+    enabled: shouldFetchCurrencyEntries && !!currencyEntriesDateRange,
+  });
+
+  // Filter currency entries by description if query mentions specific terms
+  const filteredCurrencyEntries = useMemo(() => {
+    if (!parsedQuery || currencyEntries.length === 0) return currencyEntries;
+    
+    const queryText = parsedQuery.query.toLowerCase();
+    const queryWords = queryText.split(/\s+/).filter(w => w.length > 2);
+    
+    // If query mentions specific description keywords, filter entries
+    if (queryWords.length > 0) {
+      return currencyEntries.filter(entry => {
+        const entryDesc = entry.description.toLowerCase();
+        // Check if any significant word from query appears in description
+        return queryWords.some(word => entryDesc.includes(word));
+      });
+    }
+    
+    return currencyEntries;
+  }, [currencyEntries, parsedQuery]);
 
   // Calculate result when transactions are loaded
   const result = useMemo(() => {
@@ -717,6 +789,92 @@ export default function AISummary() {
                   );
                 })}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* India Currency Entries Details */}
+        {shouldFetchCurrencyEntries && filteredCurrencyEntries.length > 0 && (
+          <Card className="rounded-2xl shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                India Currency Entries
+              </CardTitle>
+              <CardDescription>
+                {filteredCurrencyEntries.length} {filteredCurrencyEntries.length === 1 ? 'entry' : 'entries'} found matching your query
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCurrencyEntries ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredCurrencyEntries.map((entry: CurrencyEntry) => (
+                    <div
+                      key={entry.id}
+                      className="group flex items-center justify-between rounded-xl border border-border bg-background p-4 transition-all hover:border-primary/20 hover:shadow-sm"
+                    >
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        {/* Icon */}
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                          <MapPin className="h-5 w-5" />
+                        </div>
+
+                        {/* Details */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium text-foreground">
+                            {capitalizeFirst(entry.description)}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(entry.date), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Amounts */}
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground mb-1">PLN</p>
+                          <p className="text-base font-semibold text-blue-600 whitespace-nowrap">
+                            {formatPLN(entry.pln_amount)} PLN
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground mb-1">INR</p>
+                          <p className="text-base font-semibold text-orange-600 whitespace-nowrap">
+                            {formatINR(entry.inr_amount)} INR
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Summary */}
+                  {filteredCurrencyEntries.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 rounded-xl bg-blue-50 border border-blue-200">
+                          <p className="text-xs text-blue-600 mb-1">Total PLN</p>
+                          <p className="text-lg font-semibold text-blue-700">
+                            {formatPLN(filteredCurrencyEntries.reduce((sum, e) => sum + parseFloat(e.pln_amount.toString()), 0))} PLN
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-orange-50 border border-orange-200">
+                          <p className="text-xs text-orange-600 mb-1">Total INR</p>
+                          <p className="text-lg font-semibold text-orange-700">
+                            {formatINR(filteredCurrencyEntries.reduce((sum, e) => sum + parseFloat(e.inr_amount.toString()), 0))} INR
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
