@@ -192,11 +192,15 @@
   html {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    touch-action: pan-x pan-y;
+    -ms-touch-action: pan-x pan-y;
   }
 
   /* Prevent pull-to-refresh on mobile (can interfere with app) */
   body {
     overscroll-behavior-y: contain;
+    touch-action: pan-x pan-y;
+    -ms-touch-action: pan-x pan-y;
   }
 
   /* Optimize font rendering on mobile */
