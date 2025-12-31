@@ -424,6 +424,13 @@ export default function AISummary() {
     setParsedQuery(null);
   };
 
+  const clearSearch = () => {
+    setQuery("");
+    setParsedQuery(null);
+    setUseQuickFilters(false);
+    setIsProcessing(false);
+  };
+
   const quickFilterQueries = [
     { label: "Total expenses this month", query: "Total expenses this month" },
     { label: "Total income this month", query: "Total income this month" },
@@ -614,30 +621,55 @@ export default function AISummary() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  type="text"
-                  placeholder="e.g., How much I spent on Poland rent in last 6 months?"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setUseQuickFilters(false);
-                  }}
-                  className="flex-1 h-11 rounded-xl border-input bg-background shadow-sm"
-                />
-                <Button
-                  type="submit"
-                  disabled={isProcessing || !query.trim()}
-                  className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white px-6 w-full sm:w-auto"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">Search</span>
-                    </>
+                <div className="relative flex-1">
+                  <Input
+                    type="text"
+                    placeholder="e.g., How much I spent on Poland rent in last 6 months?"
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setUseQuickFilters(false);
+                    }}
+                    className="h-11 rounded-xl border-input bg-background shadow-sm pr-10"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-muted transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
                   )}
-                </Button>
+                </div>
+                <div className="flex gap-2 sm:flex-row">
+                  <Button
+                    type="submit"
+                    disabled={isProcessing || !query.trim()}
+                    className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white px-4 sm:px-6 flex-1 sm:flex-initial min-w-[100px] sm:min-w-[120px]"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Search className="h-4 w-4 sm:mr-2" />
+                        <span>Search</span>
+                      </>
+                    )}
+                  </Button>
+                  {result && (
+                    <Button
+                      type="button"
+                      onClick={clearSearch}
+                      variant="outline"
+                      className="h-11 rounded-xl px-4 sm:px-6 flex-shrink-0"
+                    >
+                      <X className="h-4 w-4 sm:mr-2" />
+                      <span>Clear</span>
+                    </Button>
+                  )}
+                </div>
               </div>
             </form>
           </CardContent>
