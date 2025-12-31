@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, MapPin, Calendar, Edit2, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrencyEntries, createCurrencyEntry, updateCurrencyEntry, deleteCurrencyEntry } from "@/lib/currency-entries";
@@ -42,6 +42,17 @@ export default function India() {
   const [isEditMode, setIsEditMode] = useState(false);
   
   const queryClient = useQueryClient();
+
+  // Open popover when custom date filter is selected
+  useEffect(() => {
+    if (dateFilter === "custom" && !isCustomDateOpen) {
+      // Small delay to ensure dropdown closes first
+      const timer = setTimeout(() => {
+        setIsCustomDateOpen(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dateFilter, isCustomDateOpen]);
 
   // Calculate date range based on filter type
   const dateRange = useMemo(() => {
@@ -286,102 +297,110 @@ export default function India() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-xl gap-2">
-                  {dateRange.label}
-                  <Calendar className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-xl">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDateFilter("this-month");
-                    setCustomStartDate(undefined);
-                    setCustomEndDate(undefined);
-                  }}
-                  className="rounded-lg"
-                >
-                  This Month
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDateFilter("last-month");
-                    setCustomStartDate(undefined);
-                    setCustomEndDate(undefined);
-                  }}
-                  className="rounded-lg"
-                >
-                  Last Month
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDateFilter("this-year");
-                    setCustomStartDate(undefined);
-                    setCustomEndDate(undefined);
-                  }}
-                  className="rounded-lg"
-                >
-                  This Year
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setDateFilter("custom");
-                    setIsCustomDateOpen(true);
-                  }}
-                  className="rounded-lg"
-                >
-                  Custom Date
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <Popover open={isCustomDateOpen && dateFilter === "custom"} onOpenChange={setIsCustomDateOpen}>
-              <PopoverContent className="w-auto p-0 rounded-xl" align="end">
-                <div className="p-4 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Start Date</label>
-                    <CalendarComponent
-                      mode="single"
-                      selected={customStartDate}
-                      onSelect={(date) => {
-                        setCustomStartDate(date);
-                        if (date && customEndDate && date > customEndDate) {
-                          setCustomEndDate(undefined);
-                        }
-                      }}
-                      className="rounded-md border"
-                    />
+            {dateFilter === "custom" ? (
+              <Popover open={isCustomDateOpen} onOpenChange={setIsCustomDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="rounded-xl gap-2">
+                    {dateRange.label}
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-xl" align="end">
+                  <div className="p-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Start Date</label>
+                      <CalendarComponent
+                        mode="single"
+                        selected={customStartDate}
+                        onSelect={(date) => {
+                          setCustomStartDate(date);
+                          if (date && customEndDate && date > customEndDate) {
+                            setCustomEndDate(undefined);
+                          }
+                        }}
+                        className="rounded-md border"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">End Date</label>
+                      <CalendarComponent
+                        mode="single"
+                        selected={customEndDate}
+                        onSelect={(date) => {
+                          if (date && customStartDate && date < customStartDate) {
+                            return;
+                          }
+                          setCustomEndDate(date);
+                          if (date && customStartDate) {
+                            setIsCustomDateOpen(false);
+                          }
+                        }}
+                        disabled={(date) => customStartDate ? date < customStartDate : false}
+                        className="rounded-md border"
+                      />
+                    </div>
+                    {customStartDate && customEndDate && (
+                      <Button
+                        onClick={() => setIsCustomDateOpen(false)}
+                        className="w-full"
+                      >
+                        Apply Filter
+                      </Button>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">End Date</label>
-                    <CalendarComponent
-                      mode="single"
-                      selected={customEndDate}
-                      onSelect={(date) => {
-                        if (date && customStartDate && date < customStartDate) {
-                          return;
-                        }
-                        setCustomEndDate(date);
-                        if (date && customStartDate) {
-                          setIsCustomDateOpen(false);
-                        }
-                      }}
-                      disabled={(date) => customStartDate ? date < customStartDate : false}
-                      className="rounded-md border"
-                    />
-                  </div>
-                  {customStartDate && customEndDate && (
-                    <Button
-                      onClick={() => setIsCustomDateOpen(false)}
-                      className="w-full"
-                    >
-                      Apply Filter
-                    </Button>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="rounded-xl gap-2">
+                    {dateRange.label}
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setDateFilter("this-month");
+                      setCustomStartDate(undefined);
+                      setCustomEndDate(undefined);
+                    }}
+                    className="rounded-lg"
+                  >
+                    This Month
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setDateFilter("last-month");
+                      setCustomStartDate(undefined);
+                      setCustomEndDate(undefined);
+                    }}
+                    className="rounded-lg"
+                  >
+                    Last Month
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setDateFilter("this-year");
+                      setCustomStartDate(undefined);
+                      setCustomEndDate(undefined);
+                    }}
+                    className="rounded-lg"
+                  >
+                    This Year
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setDateFilter("custom");
+                      setIsCustomDateOpen(true);
+                    }}
+                    className="rounded-lg"
+                  >
+                    Custom Date
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
