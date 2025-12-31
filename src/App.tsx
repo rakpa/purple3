@@ -14,6 +14,7 @@ import Dashboard from "./pages/Dashboard";
 import Categories from "./pages/Categories";
 import India from "./pages/India";
 import AISummary from "./pages/AISummary";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -159,6 +160,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AISummary />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               }
             />

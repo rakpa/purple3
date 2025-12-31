@@ -19,7 +19,7 @@ const navItems = [
   { name: "AI Summary", icon: Sparkles, href: "/ai-summary" },
   { name: "Categories", icon: BarChart3, href: "/categories" },
   { name: "India", icon: MapPin, href: "/india" },
-  { name: "Settings", icon: Settings, href: "#" },
+  { name: "Settings", icon: Settings, href: "/settings" },
 ];
 
 export function Navigation() {
