@@ -486,14 +486,14 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 rounded-xl p-1">
+              <TabsList className="flex rounded-xl bg-muted p-1">
                 <TabsTrigger 
                   value="income" 
                   className={cn(
-                    "rounded-lg h-9 px-4 py-1.5 text-sm font-medium",
-                    "data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-none",
-                    "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground",
-                    "transition-colors"
+                    "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
+                    activeTab === "income"
+                      ? "bg-green-600 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Income Breakdown
@@ -501,10 +501,10 @@ export default function Dashboard() {
                 <TabsTrigger 
                   value="expense" 
                   className={cn(
-                    "rounded-lg h-9 px-4 py-1.5 text-sm font-medium",
-                    "data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-none",
-                    "data-[state=inactive]:bg-transparent data-[state=inactive]:text-muted-foreground",
-                    "transition-colors"
+                    "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
+                    activeTab === "expense"
+                      ? "bg-red-600 text-white shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   Expense Breakdown
