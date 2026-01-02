@@ -43,16 +43,16 @@ export default function India() {
   
   const queryClient = useQueryClient();
 
-  // Open popover when custom date filter is selected
+  // Open popover when custom date filter is selected (only if dates are not set)
   useEffect(() => {
-    if (dateFilter === "custom" && !isCustomDateOpen) {
+    if (dateFilter === "custom" && !isCustomDateOpen && (!customStartDate || !customEndDate)) {
       // Small delay to ensure dropdown closes first
       const timer = setTimeout(() => {
         setIsCustomDateOpen(true);
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [dateFilter, isCustomDateOpen]);
+  }, [dateFilter]);
 
   // Calculate date range based on filter type
   const dateRange = useMemo(() => {
@@ -298,14 +298,23 @@ export default function India() {
           </div>
           <div className="flex items-center gap-2">
             {dateFilter === "custom" ? (
-              <Popover open={isCustomDateOpen} onOpenChange={setIsCustomDateOpen}>
+              <Popover open={isCustomDateOpen} onOpenChange={(open) => {
+                setIsCustomDateOpen(open);
+                // If closing and no dates selected, reset to default filter
+                if (!open && !customStartDate && !customEndDate) {
+                  setDateFilter("this-year");
+                }
+              }}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="rounded-xl gap-2">
                     {dateRange.label}
                     <Calendar className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-xl" align="end">
+                <PopoverContent 
+                  className="w-auto p-0 rounded-xl" 
+                  align="end"
+                >
                   <div className="p-4 space-y-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Start Date</label>
@@ -331,8 +340,11 @@ export default function India() {
                             return;
                           }
                           setCustomEndDate(date);
+                          // Close popover after both dates are selected
                           if (date && customStartDate) {
-                            setIsCustomDateOpen(false);
+                            setTimeout(() => {
+                              setIsCustomDateOpen(false);
+                            }, 100);
                           }
                         }}
                         disabled={(date) => customStartDate ? date < customStartDate : false}
