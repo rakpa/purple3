@@ -491,9 +491,8 @@ export default function Dashboard() {
                   value="income" 
                   className={cn(
                     "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
-                    activeTab === "income"
-                      ? "bg-green-600 text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                    "data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+                    "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                   )}
                 >
                   Income Breakdown
@@ -502,9 +501,8 @@ export default function Dashboard() {
                   value="expense" 
                   className={cn(
                     "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
-                    activeTab === "expense"
-                      ? "bg-red-600 text-white shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                    "data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+                    "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
                   )}
                 >
                   Expense Breakdown
