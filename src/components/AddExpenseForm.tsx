@@ -1,4 +1,12 @@
 import { useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,30 +144,30 @@ export function AddExpenseForm() {
             </div>
           </div>
 
-          {/* ✅ Date – Custom Styled (iOS Safe) */}
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-
-            <div className="relative h-11">
-              {/* Visible UI */}
-              <div className="absolute inset-0 flex items-center rounded-xl border border-input bg-background px-3 text-sm font-medium shadow-sm">
-                {new Date(date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </div>
-
-              {/* Native input (invisible) */}
-              <input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
-                required
-              />
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "h-11 w-full justify-start text-left font-normal rounded-xl shadow-sm",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(new Date(date), "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date ? new Date(date) : undefined}
+                  onSelect={(day) => day && setDate(format(day, "yyyy-MM-dd"))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Category */}
@@ -204,8 +212,8 @@ export function AddExpenseForm() {
             {mutation.isPending
               ? "Adding..."
               : type === "expense"
-              ? "Add Expense"
-              : "Add Income"}
+                ? "Add Expense"
+                : "Add Income"}
           </Button>
         </form>
       </CardContent>
