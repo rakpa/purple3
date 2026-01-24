@@ -223,15 +223,11 @@ export function TransactionList() {
                   {/* Category/Description */}
                   <div className="mb-1 sm:mb-1.5">
                     <p className="font-medium text-foreground text-sm sm:text-base leading-tight">
-                      {transaction.description ? (
-                        <span className="block truncate">{transaction.description}</span>
-                      ) : (
-                        <span className="block truncate">{categoryName}</span>
-                      )}
+                      <span className="block truncate">{categoryName}</span>
                     </p>
                     {transaction.description && (
                       <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
-                        {categoryName}
+                        {transaction.description}
                       </p>
                     )}
                   </div>

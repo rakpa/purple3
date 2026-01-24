@@ -760,7 +760,6 @@ export default function AISummary() {
               <div className="space-y-3">
                 {result.transactions.map((transaction) => {
                   const isIncome = transaction.type === "income";
-                  const displayName = transaction.description || transaction.category;
                   
                   return (
                     <div
@@ -787,9 +786,14 @@ export default function AISummary() {
                         {/* Details */}
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-foreground">
-                            {displayName ? capitalizeFirst(displayName) : capitalizeFirst(transaction.category)}
+                            {capitalizeFirst(transaction.category)}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
+                            {transaction.description && (
+                              <p className="text-sm text-muted-foreground truncate">
+                                {transaction.description} •
+                              </p>
+                            )}
                             <p className="text-sm text-muted-foreground">
                               {format(new Date(transaction.date), "MMM dd, yyyy")}
                             </p>

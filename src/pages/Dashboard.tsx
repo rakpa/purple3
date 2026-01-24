@@ -627,7 +627,6 @@ export default function Dashboard() {
             ) : recentTransactions.length > 0 ? (
               <div className="space-y-2 sm:space-y-3">
                 {recentTransactions.map((transaction) => {
-                  const displayName = transaction.description || transaction.category;
                   const isIncome = transaction.type === "income";
                   
                   return (
@@ -654,11 +653,18 @@ export default function Dashboard() {
                       {/* Details */}
                       <div className="flex-1 min-w-0 flex flex-col gap-1">
                         <p className="font-medium text-foreground text-sm sm:text-base line-clamp-2 break-words">
-                          {displayName ? capitalizeFirst(displayName) : capitalizeFirst(transaction.category)}
+                          {capitalizeFirst(transaction.category)}
                         </p>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {formatDate(transaction.date)}
-                        </p>
+                        <div className="flex flex-col gap-0.5">
+                          {transaction.description && (
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                              {transaction.description}
+                            </p>
+                          )}
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {formatDate(transaction.date)}
+                          </p>
+                        </div>
                       </div>
 
                       {/* Amount & Actions */}
