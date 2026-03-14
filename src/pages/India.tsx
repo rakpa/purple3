@@ -1,12 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
-import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, MapPin, Calendar, Edit2, Trash2 } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowUp, ArrowDown, MapPin, Calendar, Edit2, Trash2, Search } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCurrencyEntries, createCurrencyEntry, updateCurrencyEntry, deleteCurrencyEntry } from "@/lib/currency-entries";
+import { getCategories } from "@/lib/categories";
 import { format, startOfMonth, endOfMonth, subMonths, startOfYear, endOfYear } from "date-fns";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,11 +20,25 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
+import { cn, capitalizeFirst } from "@/lib/utils";
 import { formatPLN, formatINR } from "@/lib/currency-format";
 import { toast } from "sonner";
 import type { CurrencyEntry } from "@/types/currency-entry";
+import { CategoryIcon } from "@/components/CategoryIcon";
 
 type DateFilterType = "this-month" | "last-month" | "this-year" | "custom";
 
@@ -35,13 +51,22 @@ export default function India() {
   // Form state
   const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
   const [formDescription, setFormDescription] = useState("");
+  const [formCategory, setFormCategory] = useState("");
   const [formPlnAmount, setFormPlnAmount] = useState("");
   const [formInrAmount, setFormInrAmount] = useState("");
   const [editingEntry, setEditingEntry] = useState<CurrencyEntry | null>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("pln");
   
   const queryClient = useQueryClient();
+
+  // Fetch categories
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => getCategories(),
+  });
 
   // Open popover when custom date filter is selected (only if dates are not set)
   useEffect(() => {
@@ -153,7 +178,7 @@ export default function India() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { date: string; description: string; pln_amount: number; inr_amount: number } }) =>
+    mutationFn: ({ id, data }: { id: string; data: { date: string; description: string; category?: string; pln_amount: number; inr_amount: number } }) =>
       updateCurrencyEntry(id, data),
     onSuccess: () => {
       toast.success("Currency entry updated successfully!");
@@ -180,6 +205,7 @@ export default function India() {
   const resetForm = () => {
     setFormDate(new Date().toISOString().split("T")[0]);
     setFormDescription("");
+    setFormCategory("");
     setFormPlnAmount("");
     setFormInrAmount("");
     setEditingEntry(null);
@@ -190,6 +216,7 @@ export default function India() {
     setEditingEntry(entry);
     setFormDate(entry.date);
     setFormDescription(entry.description);
+    setFormCategory(entry.category || "");
     setFormPlnAmount(entry.pln_amount.toString());
     setFormInrAmount(entry.inr_amount.toString());
     setIsEditMode(true);
@@ -225,6 +252,7 @@ export default function India() {
         data: {
           date: formDate,
           description: formDescription,
+          category: formCategory || undefined,
           pln_amount: plnAmount,
           inr_amount: inrAmount,
         },
@@ -233,6 +261,7 @@ export default function India() {
       createMutation.mutate({
         date: formDate,
         description: formDescription,
+        category: formCategory || undefined,
         pln_amount: plnAmount,
         inr_amount: inrAmount,
       });
@@ -256,6 +285,90 @@ export default function India() {
       count: currencyEntries.length 
     };
   }, [currencyEntries]);
+
+  // Prepare chart data for PLN breakdown by category
+  const plnBreakdown = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+
+    currencyEntries.forEach((entry) => {
+      const category = entry.category || "Uncategorized";
+      const current = categoryMap.get(category) || 0;
+      categoryMap.set(category, current + parseFloat(entry.pln_amount.toString()));
+    });
+
+    return Array.from(categoryMap.entries())
+      .map(([category, amount]) => ({
+        category,
+        amount: Number(amount.toFixed(2)),
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [currencyEntries]);
+
+  // Prepare chart data for INR breakdown by category
+  const inrBreakdown = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+
+    currencyEntries.forEach((entry) => {
+      const category = entry.category || "Uncategorized";
+      const current = categoryMap.get(category) || 0;
+      categoryMap.set(category, current + parseFloat(entry.inr_amount.toString()));
+    });
+
+    return Array.from(categoryMap.entries())
+      .map(([category, amount]) => ({
+        category,
+        amount: Number(amount.toFixed(2)),
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [currencyEntries]);
+
+  // Recent entries (filtered and sorted)
+  const recentEntries = useMemo(() => {
+    return currencyEntries
+      .filter((entry) => {
+        const searchLower = searchQuery.toLowerCase();
+        return (
+          !searchQuery ||
+          entry.description?.toLowerCase().includes(searchLower) ||
+          entry.category?.toLowerCase().includes(searchLower)
+        );
+      })
+      .slice(0, 10)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [currencyEntries, searchQuery]);
+
+  const getCategoryColor = (category: string) => {
+    const lower = category.toLowerCase();
+    if (lower.includes("rent")) return "#14b8a6";
+    if (lower.includes("food")) return "#3b82f6";
+    if (lower.includes("transport")) return "#ef4444";
+    if (lower.includes("utilities")) return "#f59e0b";
+    return "#8b5cf6";
+  };
+
+  const chartConfig = useMemo(() => {
+    const config: Record<string, { label: string; color?: string }> = {
+      amount: {
+        label: "Amount",
+      },
+    };
+
+    plnBreakdown.forEach((item) => {
+      config[item.category] = {
+        label: item.category,
+        color: getCategoryColor(item.category),
+      };
+    });
+
+    inrBreakdown.forEach((item) => {
+      config[item.category] = {
+        label: item.category,
+        color: getCategoryColor(item.category),
+      };
+    });
+
+    return config;
+  }, [plnBreakdown, inrBreakdown]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -465,6 +578,226 @@ export default function India() {
           </Card>
         </div>
 
+        {/* Financial Overview Dashboard */}
+        <Card className="mb-8 rounded-2xl shadow-card">
+          <CardHeader>
+            <CardTitle>Financial Overview</CardTitle>
+            <CardDescription>Track your PLN and INR amounts by category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="flex rounded-xl bg-muted p-1">
+                <TabsTrigger 
+                  value="pln" 
+                  className={cn(
+                    "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
+                    "data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+                    "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                  )}
+                >
+                  PLN Breakdown
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="inr" 
+                  className={cn(
+                    "flex-1 rounded-lg py-2.5 text-sm font-medium transition-all",
+                    "data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-sm",
+                    "data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground"
+                  )}
+                >
+                  INR Breakdown
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="pln" className="mt-6">
+                {plnBreakdown.length > 0 ? (
+                  <>
+                    <div className="mb-4 flex flex-wrap gap-4">
+                      {plnBreakdown.map((item) => (
+                        <div key={item.category} className="flex items-center gap-2">
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: getCategoryColor(item.category) }}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {capitalizeFirst(item.category)}: {formatPLN(item.amount)} PLN
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <ChartContainer config={chartConfig} className="h-[300px]">
+                      <ResponsiveContainer>
+                        <BarChart data={plnBreakdown.map(item => ({ ...item, category: capitalizeFirst(item.category) }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="category" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar 
+                            dataKey="amount" 
+                            radius={[8, 8, 0, 0]}
+                          >
+                            {plnBreakdown.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={getCategoryColor(entry.category)} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </>
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground">
+                    No PLN data available
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="inr" className="mt-6">
+                {inrBreakdown.length > 0 ? (
+                  <>
+                    <div className="mb-4 flex flex-wrap gap-4">
+                      {inrBreakdown.map((item) => (
+                        <div key={item.category} className="flex items-center gap-2">
+                          <div
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: getCategoryColor(item.category) }}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {capitalizeFirst(item.category)}: {formatINR(item.amount)} INR
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <ChartContainer config={chartConfig} className="h-[300px]">
+                      <ResponsiveContainer>
+                        <BarChart data={inrBreakdown.map(item => ({ ...item, category: capitalizeFirst(item.category) }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="category" />
+                          <YAxis />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar 
+                            dataKey="amount" 
+                            radius={[8, 8, 0, 0]}
+                          >
+                            {inrBreakdown.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={getCategoryColor(entry.category)} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </>
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground">
+                    No INR data available
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Recent Currency Entries */}
+        <Card className="mb-8 rounded-2xl shadow-card">
+          <CardHeader>
+            <CardTitle>Recent Currency Entries</CardTitle>
+            <CardDescription>Your latest currency transactions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Search */}
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search entries..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-11 rounded-xl border-input bg-background pl-10 shadow-sm"
+              />
+            </div>
+
+            {/* Entry List */}
+            {isLoadingEntries ? (
+              <div className="py-12 text-center text-muted-foreground">
+                Loading entries...
+              </div>
+            ) : recentEntries.length > 0 ? (
+              <div className="space-y-2 sm:space-y-3">
+                {recentEntries.map((entry) => {
+                  const category = categories.find(cat => cat.name === entry.category);
+                  
+                  return (
+                    <div
+                      key={entry.id}
+                      className="group flex items-center gap-3 sm:gap-4 rounded-xl border border-border bg-background p-3 sm:p-4 transition-all hover:border-primary/20 hover:shadow-sm"
+                    >
+                      {/* Icon */}
+                      <div className="flex h-12 w-12 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                        {category ? (
+                          <CategoryIcon iconName={category.icon} size={20} />
+                        ) : (
+                          <MapPin className="h-5 w-5 sm:h-5 sm:w-5" />
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-1">
+                        <p className="font-medium text-foreground text-sm sm:text-base line-clamp-2 break-words">
+                          {entry.category ? capitalizeFirst(entry.category) : "Uncategorized"}
+                        </p>
+                        <div className="flex flex-col gap-0.5">
+                          {entry.description && (
+                            <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                              {entry.description}
+                            </p>
+                          )}
+                          <p className="text-xs sm:text-sm text-muted-foreground">
+                            {formatDate(entry.date)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount & Actions */}
+                      <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3 shrink-0">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-sm sm:text-base font-semibold whitespace-nowrap text-blue-600">
+                            {formatPLN(entry.pln_amount)} PLN
+                          </span>
+                          <span className="text-sm sm:text-base font-semibold whitespace-nowrap text-orange-600">
+                            {formatINR(entry.inr_amount)} INR
+                          </span>
+                        </div>
+
+                        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => handleEdit(entry)}
+                          >
+                            <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-red-600"
+                            onClick={() => handleDelete(entry.id)}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-muted-foreground">
+                No entries found
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Currency Entry Form */}
         <Card className="mb-8 rounded-2xl shadow-card">
           <CardHeader>
@@ -513,6 +846,23 @@ export default function India() {
                   className="flex-1 h-11 rounded-xl border-input bg-background shadow-sm"
                   required
                 />
+
+                {/* Category */}
+                <Select value={formCategory} onValueChange={setFormCategory}>
+                  <SelectTrigger className="flex-1 h-11 rounded-xl border-input bg-background shadow-sm">
+                    <SelectValue placeholder="Category (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.name}>
+                        <div className="flex items-center gap-2">
+                          <CategoryIcon iconName={cat.icon} size={18} />
+                          {cat.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* PLN Amount */}
                 <Input
@@ -581,6 +931,7 @@ export default function India() {
                     <tr className="bg-black text-white">
                       <th className="px-3 sm:px-5 py-3 sm:py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 min-w-[120px] sm:w-48">Date</th>
                       <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px]">Description</th>
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px]">Category</th>
                       <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px] sm:w-40">Amount (PLN)</th>
                       <th className="px-3 sm:px-6 py-3 sm:py-4 text-right text-xs font-semibold font-sans border-r border-gray-700 min-w-[100px] sm:w-40">Amount (INR)</th>
                       {isEditMode && (
@@ -605,6 +956,25 @@ export default function India() {
                           <div className="max-w-[120px] sm:max-w-none break-words overflow-hidden">
                             {entry.description}
                           </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground font-sans border-r border-gray-300 min-w-[100px]">
+                          {entry.category ? (
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const category = categories.find(cat => cat.name === entry.category);
+                                return category ? (
+                                  <>
+                                    <CategoryIcon iconName={category.icon} size={16} />
+                                    <span>{capitalizeFirst(entry.category)}</span>
+                                  </>
+                                ) : (
+                                  <span>{capitalizeFirst(entry.category)}</span>
+                                );
+                              })()}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-foreground text-right font-sans tabular-nums border-r border-gray-300 min-w-[100px] sm:w-40 whitespace-nowrap">
                           {formatPLN(entry.pln_amount)} PLN

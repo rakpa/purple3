@@ -3,6 +3,7 @@ export interface CurrencyEntry {
   user_id: string;
   date: string;
   description: string;
+  category?: string;
   pln_amount: number;
   inr_amount: number;
   created_at: string;
@@ -12,6 +13,7 @@ export interface CurrencyEntry {
 export interface CurrencyEntryInsert {
   date: string;
   description: string;
+  category?: string;
   pln_amount: number;
   inr_amount: number;
   user_id: string;
@@ -20,6 +22,7 @@ export interface CurrencyEntryInsert {
 export interface CurrencyEntryUpdate {
   date?: string;
   description?: string;
+  category?: string;
   pln_amount?: number;
   inr_amount?: number;
 }
